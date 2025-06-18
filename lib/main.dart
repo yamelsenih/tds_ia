@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart'; // Asegúrate de que esta importación esté
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Micro:bit Acelerómetro',
+      title: 'Sensor de Sólidos en el Agua',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -56,6 +57,8 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   DateTime? lastAISupportTime;
   double? currentLatitude;
   double? currentLongitude;
+  String? _apiResponseMessage;
+  bool _isSendingDataEnabled = false;
 
   final String microbitName = 'BBC micro:bit'; // Nombre por defecto del Micro:bit
   final String apiUrl = 'https://n8n.dev.solopcloud.com/webhook/12c1e593-7bad-4d4f-9ce7-fbf64b6ffb85';
@@ -217,7 +220,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                 }
               });
               setState(() {
-                accelerometerData = 'Recibiendo datos del acelerómetro...';
+                accelerometerData = 'Recibiendo datos del sensor...';
               });
               return;
             }
@@ -256,7 +259,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
         _measureBox.add(TdsMeasure(measure: measure, latitude: latitude, longitude: longitude, datetime: lastMeasurementTime ?? DateTime.now()));
         print('Acelerómetro (JSON) - measure: $measure, latitude: $latitude, longitude: $longitude, datetime: $lastMeasurementTime');
       } else {
-        print('Error: Valores de acelerómetro nulos en JSON: $data');
+        print('Error: Valores de sensor nulos en JSON: $data');
       }
     } catch (e) {
       print('Error al parsear JSON o datos: $e, Data: $data');
@@ -265,17 +268,20 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   }
   
   _getAISupport() async {
+    if (!_isSendingDataEnabled) {
+      return;
+    }
     if(lastAISupportTime == null) {
       setState(() {
         lastAISupportTime = DateTime.now();
       });
     }
     Duration difference = DateTime.now().difference(lastAISupportTime!);
-    if(difference.inSeconds >= 10) {
+    if(difference.inSeconds >= 20) {
       lastAISupportTime = DateTime.now();
-      getTop20Measurements().forEach((element) {
-        print("Top 20 - measure: ${element.measure}, latitude: ${element.latitude}, longitude: ${element.longitude}, datetime: ${element.datetime}");
-      });
+      // getTop20Measurements().forEach((element) {
+      //   print("Top 20 - measure: ${element.measure}, latitude: ${element.latitude}, longitude: ${element.longitude}, datetime: ${element.datetime}");
+      // });
       final payload = TdsMeasuresPayload(
         measures: getTop20Measurements(),
       );
@@ -293,11 +299,15 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
 
         // 3. Verifica la respuesta del servidor
         if (response.statusCode == 200 || response.statusCode == 201) { // 200 OK, 201 Created
-          print('Datos enviados exitosamente al API. Respuesta: ${response.body}');
-          // Aquí podrías actualizar un mensaje en la UI o limpiar el estado
+          // print('Datos enviados exitosamente al API. Respuesta: ${response.body}');
+          // // Aquí podrías actualizar un mensaje en la UI o limpiar el estado
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Medición enviada al servidor! ${response.body}")),
+            const SnackBar(content: Text("Respuesta de la (IA) recibida")),
           );
+          final Map<String, dynamic> responseJson = jsonDecode(response.body);
+          setState(() {
+            _apiResponseMessage = responseJson['text'];
+          });
         } else {
           print('Error al enviar datos al API. Código de estado: ${response.statusCode}, Cuerpo: ${response.body}');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -309,6 +319,9 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error de conexión al API: $e')),
         );
+        setState(() {
+          _apiResponseMessage = "";
+        });
       }
     }
   }
@@ -348,7 +361,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Micro:bit Acelerómetro'),
+        title: const Text('Sensor de Sólidos en el Agua'),
       ),
       body: Center(
         child: Padding(
@@ -357,7 +370,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
-                accelerometerData,
+                'Datos de Lectura del Sensor: $accelerometerData mg/L.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
@@ -375,15 +388,65 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                   child: const Text('Desconectar'),
                 ),
               const SizedBox(height: 20),
-              const Text(
-                'Datos del acelerómetro (X, Y, Z):',
-                style: TextStyle(fontSize: 16),
-              ),
+              // const SizedBox(height: 10),
+              // Text(
+              //   'Raw: $accelerometerData',
+              //   style: const TextStyle(fontSize: 18),
+              // ),
               const SizedBox(height: 10),
-              Text(
-                'Raw: $accelerometerData',
-                style: const TextStyle(fontSize: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _isSendingDataEnabled ? 'Consulta a la (IA) Habilitada' : 'Consulta a la (IA) Deshabilitada',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Switch(
+                    value: _isSendingDataEnabled, // El valor actual del switch
+                    onChanged: (bool newValue) {
+                      setState(() {
+                        _isSendingDataEnabled = newValue; // Actualiza el estado al cambiar
+                        if (_isSendingDataEnabled) {
+                          // Si se habilita, inicia el timer para el envío en lotes
+                          setState(() {
+                            lastAISupportTime = DateTime.now().subtract(const Duration(days: 1));
+                          });
+                          _getAISupport();
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(content: Text('Consulta a la IA habilitada.')),
+                          // );
+                        } else {
+                          // Si se deshabilita, cancela el timer
+                           // Opcional: poner a null después de cancelar
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(content: Text('Consulta a la IA deshabilitada.')),
+                          // );
+                        }
+                      });
+                    },
+                  ),
+                ],
               ),
+              const Text(
+                "Recomendaciones de la IA",
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              // --- USANDO MarkdownBody PARA MOSTRAR LA RESPUESTA ---
+              Expanded(
+                flex: 3, // Le da más espacio a la respuesta del API
+                child: SingleChildScrollView(
+                  child: MarkdownBody(
+                    data: _apiResponseMessage ?? "",
+                    // Puedes personalizar el estilo aquí si lo necesitas
+                    // styleSheet: MarkdownStyleSheet(
+                    //   h1: TextStyle(fontSize: 24, color: Colors.blue),
+                    //   p: TextStyle(fontSize: 16),
+                    // ),
+                  ),
+                ),
+              ),
+              // --- FIN MarkdownBody ---
+              const SizedBox(height: 10),
             ],
           ),
         ),
