@@ -15,9 +15,17 @@ class PersistenceUtil {
       Hive.initFlutter();
     }
     await _createAdapters();
+    await _openBoxes();
   }
 
   static _createAdapters() async {
     Hive.registerAdapter(TdsMeasureAdapter());
+  }
+
+  static _openBoxes() async {
+    if (!Hive.isBoxOpen(measureBoxName)) {
+      await Hive.openBox(measureBoxName);
+      return;
+    }
   }
 }
