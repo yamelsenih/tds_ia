@@ -454,7 +454,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                 flex: 3, // Le da más espacio a la respuesta del API
                 child: SingleChildScrollView(
                   child: MarkdownBody(
-                    data: _apiResponseMessage ?? "",
+                    data: _getValidText() ?? "",
                     // Puedes personalizar el estilo aquí si lo necesitas
                     // styleSheet: MarkdownStyleSheet(
                     //   h1: TextStyle(fontSize: 24, color: Colors.blue),
@@ -492,6 +492,6 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
     String validText = _apiResponseMessage ?? "";
     RegExp regExp = RegExp(r'"color_indicator":"(#(?:[0-9a-fA-F]{3}){1,2}|#[0-9a-fA-F]{6})"');
     String modifiedText = validText.replaceAll(regExp, '');
-    return modifiedText;
+    return modifiedText.replaceAll("```", "");
   }
 }
