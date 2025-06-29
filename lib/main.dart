@@ -60,6 +60,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   double? currentLongitude;
   String? _apiResponseMessage;
   bool _isSendingDataEnabled = false;
+  String _hexColor = '#FFFFAFAFA';
 
   final String microbitName = 'BBC micro:bit'; // Nombre por defecto del Micro:bit
   final String apiUrl = 'https://n8n.dev.solopcloud.com/webhook/12c1e593-7bad-4d4f-9ce7-fbf64b6ffb85';
@@ -308,6 +309,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
           final Map<String, dynamic> responseJson = jsonDecode(response.body);
           setState(() {
             _apiResponseMessage = responseJson['text'];
+            _changeColor(_getColor());
           });
         } else {
           print('Error al enviar datos al API. Código de estado: ${response.statusCode}, Cuerpo: ${response.body}');
@@ -358,9 +360,24 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
     super.dispose();
   }
 
+  Color _getColorFromHex(String hexColor) {
+    hexColor = hexColor.toUpperCase().replaceAll("#", "");
+    if (hexColor.length == 6) {
+      hexColor = "FF" + hexColor; // Add FF for opacity if not present
+    }
+    return Color(int.parse(hexColor, radix: 16));
+  }
+
+  void _changeColor(String newHexColor) {
+    setState(() {
+      _hexColor = newHexColor;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _getColorFromHex(_hexColor),
       appBar: AppBar(
         title: const Text('Sensor de Sólidos en el Agua'),
       ),
@@ -371,7 +388,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
-                'Datos de Lectura del Sensor: $accelerometerData mg/L.',
+                'Datos de Lectura del Sensor: $accelerometerData PPM.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
@@ -453,5 +470,28 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
         ),
       ),
     );
+  }
+
+  String _getColor() {
+    String validText = _apiResponseMessage ?? "";
+    RegExp regExp = RegExp(r'"color_indicator":"(#(?:[0-9a-fA-F]{3}){1,2}|#[0-9a-fA-F]{6})"');
+    List<String> extractedColors = [];
+    Iterable<RegExpMatch> matches = regExp.allMatches(validText);
+    String validColor = "#FFFFAFAFA";
+    for (final match in matches) {
+      // Group 1 contains the captured hexadecimal color value
+      if (match.group(1) != null) {
+        validColor = match.group(1)!;
+        break;
+      }
+    }
+    return validColor;
+  }
+
+  String _getValidText() {
+    String validText = _apiResponseMessage ?? "";
+    RegExp regExp = RegExp(r'"color_indicator":"(#(?:[0-9a-fA-F]{3}){1,2}|#[0-9a-fA-F]{6})"');
+    String modifiedText = validText.replaceAll(regExp, '');
+    return modifiedText;
   }
 }
