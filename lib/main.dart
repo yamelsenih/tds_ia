@@ -52,6 +52,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   BluetoothDevice? microbitDevice;
   BluetoothCharacteristic? uartCharacteristic; // Característica para UART
   String accelerometerData = 'Esperando datos...';
+  double data = 0;
   bool isScanning = false;
   bool isConnected = false;
   DateTime? lastMeasurementTime;
@@ -60,7 +61,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   double? currentLongitude;
   String? _apiResponseMessage;
   bool _isSendingDataEnabled = false;
-  String _hexColor = '#FFFFAFAFA';
+  Color? _currentColor;
 
   final String microbitName = 'BBC micro:bit'; // Nombre por defecto del Micro:bit
   final String apiUrl = 'https://n8n.dev.solopcloud.com/webhook/12c1e593-7bad-4d4f-9ce7-fbf64b6ffb85';
@@ -215,7 +216,6 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                 if (value.isNotEmpty) {
                   String receivedData = String.fromCharCodes(value);
                   setState(() {
-                    accelerometerData = receivedData;
                     _getCurrentLocation();
                   });
                   _saveData(receivedData);
@@ -241,13 +241,15 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
     }
   }
 
-  _saveData(String data) async {
+  _saveData(String receiveData) async {
     try {
-      final measure = double.parse(data);
+      final measure = double.parse(receiveData);
       if (measure != null) {
         setState(() {
+          data = measure;
           lastMeasurementTime = DateTime.now(); // Captura el momento actual
         });
+        _changeColor(measure);
         double latitude = 0;
         double longitude = 0;
         final currentLatitude = this.currentLatitude;
@@ -309,7 +311,6 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
           final Map<String, dynamic> responseJson = jsonDecode(response.body);
           setState(() {
             _apiResponseMessage = responseJson['text'];
-            _changeColor(_getColor());
           });
         } else {
           print('Error al enviar datos al API. Código de estado: ${response.statusCode}, Cuerpo: ${response.body}');
@@ -360,24 +361,30 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
     super.dispose();
   }
 
-  Color _getColorFromHex(String hexColor) {
-    hexColor = hexColor.toUpperCase().replaceAll("#", "");
-    if (hexColor.length == 6) {
-      hexColor = "FF" + hexColor; // Add FF for opacity if not present
-    }
-    return Color(int.parse(hexColor, radix: 16));
+  Color _getDefaultColor() {
+    return Color(int.parse("FFFFAFAFA", radix: 16));
   }
 
-  void _changeColor(String newHexColor) {
+  void _changeColor(double measure) {
     setState(() {
-      _hexColor = newHexColor;
+      if(measure > 1 && measure <= 120) {
+        _currentColor = Colors.green;
+      } else if(measure > 120 && measure <= 250) {
+        _currentColor = Colors.yellow;
+      } else if(measure > 250 && measure <= 350) {
+        _currentColor = Colors.orange;
+      } else if(measure > 350) {
+        _currentColor = Colors.red;
+      } else {
+        _currentColor = _getDefaultColor();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _getColorFromHex(_hexColor),
+      backgroundColor: _currentColor,
       appBar: AppBar(
         title: const Text('Sensor de Sólidos en el Agua'),
       ),
@@ -388,9 +395,16 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
-                'Datos de Lectura del Sensor: $accelerometerData PPM.',
+                'Datos de Lectura: $data PPM.',
                 textAlign: TextAlign.center,
+                maxLines: 1,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                accelerometerData,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.normal),
               ),
               const SizedBox(height: 30),
               if (isScanning)
