@@ -51,7 +51,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   final _measureBox = Hive.box(measureBoxName);
   BluetoothDevice? microbitDevice;
   BluetoothCharacteristic? uartCharacteristic; // Característica para UART
-  // String accelerometerData = 'Esperando datos...';
+  String accelerometerData = 'Esperando datos...';
   double data = 0;
   bool isScanning = false;
   bool isConnected = false;
@@ -155,10 +155,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   void _startScan() {
     setState(() {
       isScanning = true;
-      // accelerometerData = 'Escaneando dispositivos...';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Escaneando dispositivos...')),
-      );
+      accelerometerData = 'Escaneando dispositivos...';
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Escaneando dispositivos...')),
+      // );
     });
 
     // Cambios aquí: Llamar a los métodos directamente desde FlutterBluePlus
@@ -173,10 +173,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
           setState(() {
             microbitDevice = r.device;
             isScanning = false;
-            // accelerometerData = 'Micro:bit encontrado: ${r.device.name}. Conectando...';
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Micro:bit encontrado: ${r.device.name}. Conectando...')),
-            );
+            accelerometerData = 'Micro:bit encontrado: ${r.device.name}. Conectando...';
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(content: Text('Micro:bit encontrado: ${r.device.name}. Conectando...')),
+            // );
           });
           _connectToDevice(r.device);
           break;
@@ -190,10 +190,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
         setState(() {
           isScanning = false;
           if (microbitDevice == null) {
-            // accelerometerData = 'No se encontró el Micro:bit. Reintentando...';
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('No se encontró el Micro:bit. Reintentando...')),
-            );
+            accelerometerData = 'No se encontró el Micro:bit. Reintentando...';
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(content: Text('No se encontró el Micro:bit. Reintentando...')),
+            // );
             Future.delayed(const Duration(seconds: 2), () {
               _startScan();
             });
@@ -208,10 +208,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
       await device.connect();
       setState(() {
         isConnected = true;
-        // accelerometerData = 'Conectado al Micro:bit. Buscando servicios...';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Conectado al Micro:bit. Buscando servicios...')),
-        );
+        accelerometerData = 'Conectado al Micro:bit. Buscando servicios...';
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Conectado al Micro:bit. Buscando servicios...')),
+        // );
       });
 
       List<BluetoothService> services = await device.discoverServices();
@@ -229,16 +229,16 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                   String receivedData = String.fromCharCodes(value);
                   setState(() {
                     _getCurrentLocation();
-                    // accelerometerData = "";
+                    accelerometerData = "";
                   });
                   _saveData(receivedData);
                 }
               });
               setState(() {
-                // accelerometerData = 'Recibiendo datos del sensor...';
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Recibiendo datos del sensor...')),
-                );
+                accelerometerData = 'Recibiendo datos del sensor...';
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(content: Text('Recibiendo datos del sensor...')),
+                // );
               });
               return;
             }
@@ -246,18 +246,18 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
         }
       }
       setState(() {
-        // accelerometerData = 'No se encontró la característica UART TX. Asegúrate de que el Micro:bit está enviando datos.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se encontró la característica UART TX. Asegúrate de que el Micro:bit está enviando datos.')),
-        );
+        accelerometerData = 'No se encontró la característica UART TX. Asegúrate de que el Micro:bit está enviando datos.';
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('No se encontró la característica UART TX. Asegúrate de que el Micro:bit está enviando datos.')),
+        // );
       });
     } catch (e) {
       setState(() {
         isConnected = false;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al conectar o al leer datos: $e')),
-        );
-        // accelerometerData = 'Error al conectar o al leer datos: $e';
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Error al conectar o al leer datos: $e')),
+        // );
+        accelerometerData = 'Error al conectar o al leer datos: $e';
       });
       _disconnectDevice();
     }
@@ -370,10 +370,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
       await microbitDevice!.disconnect();
       setState(() {
         isConnected = false;
-        // accelerometerData = 'Desconectado del Micro:bit.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Desconectado del Micro:bit.')),
-        );
+        accelerometerData = 'Desconectado del Micro:bit.';
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Desconectado del Micro:bit.')),
+        // );
         microbitDevice = null;
         uartCharacteristic = null;
       });
@@ -425,12 +425,12 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                 maxLines: 1,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
-              // Text(
-              //   accelerometerData,
-              //   textAlign: TextAlign.center,
-              //   maxLines: 2,
-              //   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.normal),
-              // ),
+              Text(
+                accelerometerData,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.normal),
+              ),
               const SizedBox(height: 10),
               if (isScanning)
                 const CircularProgressIndicator(),
