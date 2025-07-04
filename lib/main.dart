@@ -51,7 +51,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   final _measureBox = Hive.box(measureBoxName);
   BluetoothDevice? microbitDevice;
   BluetoothCharacteristic? uartCharacteristic; // Característica para UART
-  String accelerometerData = 'Esperando datos...';
+  // String accelerometerData = 'Esperando datos...';
   double data = 0;
   bool isScanning = false;
   bool isConnected = false;
@@ -155,7 +155,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   void _startScan() {
     setState(() {
       isScanning = true;
-      accelerometerData = 'Escaneando dispositivos...';
+      // accelerometerData = 'Escaneando dispositivos...';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Escaneando dispositivos...')),
+      );
     });
 
     // Cambios aquí: Llamar a los métodos directamente desde FlutterBluePlus
@@ -164,13 +167,16 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
     // Cambios aquí: Usar FlutterBluePlus.scanResults
     FlutterBluePlus.scanResults.listen((results) {
       for (ScanResult r in results) {
-        if (r.device.name == microbitName) {
+        if (r.device.name.startsWith(microbitName)) {
           // Cambios aquí: Usar FlutterBluePlus.stopScan()
           FlutterBluePlus.stopScan();
           setState(() {
             microbitDevice = r.device;
             isScanning = false;
-            accelerometerData = 'Micro:bit encontrado: ${r.device.name}. Conectando...';
+            // accelerometerData = 'Micro:bit encontrado: ${r.device.name}. Conectando...';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Micro:bit encontrado: ${r.device.name}. Conectando...')),
+            );
           });
           _connectToDevice(r.device);
           break;
@@ -184,7 +190,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
         setState(() {
           isScanning = false;
           if (microbitDevice == null) {
-            accelerometerData = 'No se encontró el Micro:bit. Reintentando...';
+            // accelerometerData = 'No se encontró el Micro:bit. Reintentando...';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('No se encontró el Micro:bit. Reintentando...')),
+            );
             Future.delayed(const Duration(seconds: 2), () {
               _startScan();
             });
@@ -199,7 +208,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
       await device.connect();
       setState(() {
         isConnected = true;
-        accelerometerData = 'Conectado al Micro:bit. Buscando servicios...';
+        // accelerometerData = 'Conectado al Micro:bit. Buscando servicios...';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Conectado al Micro:bit. Buscando servicios...')),
+        );
       });
 
       List<BluetoothService> services = await device.discoverServices();
@@ -217,12 +229,16 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                   String receivedData = String.fromCharCodes(value);
                   setState(() {
                     _getCurrentLocation();
+                    // accelerometerData = "";
                   });
                   _saveData(receivedData);
                 }
               });
               setState(() {
-                accelerometerData = 'Recibiendo datos del sensor...';
+                // accelerometerData = 'Recibiendo datos del sensor...';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Recibiendo datos del sensor...')),
+                );
               });
               return;
             }
@@ -230,12 +246,18 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
         }
       }
       setState(() {
-        accelerometerData = 'No se encontró la característica UART TX. Asegúrate de que el Micro:bit está enviando datos.';
+        // accelerometerData = 'No se encontró la característica UART TX. Asegúrate de que el Micro:bit está enviando datos.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se encontró la característica UART TX. Asegúrate de que el Micro:bit está enviando datos.')),
+        );
       });
     } catch (e) {
       setState(() {
         isConnected = false;
-        accelerometerData = 'Error al conectar o al leer datos: $e';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al conectar o al leer datos: $e')),
+        );
+        // accelerometerData = 'Error al conectar o al leer datos: $e';
       });
       _disconnectDevice();
     }
@@ -348,7 +370,10 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
       await microbitDevice!.disconnect();
       setState(() {
         isConnected = false;
-        accelerometerData = 'Desconectado del Micro:bit.';
+        // accelerometerData = 'Desconectado del Micro:bit.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Desconectado del Micro:bit.')),
+        );
         microbitDevice = null;
         uartCharacteristic = null;
       });
@@ -390,7 +415,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -398,15 +423,15 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                 'Datos de Lectura: $data PPM.',
                 textAlign: TextAlign.center,
                 maxLines: 1,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
-              Text(
-                accelerometerData,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.normal),
-              ),
-              const SizedBox(height: 30),
+              // Text(
+              //   accelerometerData,
+              //   textAlign: TextAlign.center,
+              //   maxLines: 2,
+              //   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.normal),
+              // ),
+              const SizedBox(height: 10),
               if (isScanning)
                 const CircularProgressIndicator(),
               if (!isScanning && !isConnected)
@@ -419,19 +444,19 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
                   onPressed: _disconnectDevice,
                   child: const Text('Desconectar'),
                 ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               // const SizedBox(height: 10),
               // Text(
               //   'Raw: $accelerometerData',
               //   style: const TextStyle(fontSize: 18),
               // ),
-              const SizedBox(height: 10),
+              // const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _isSendingDataEnabled ? 'Consulta a la (IA) Habilitada' : 'Consulta a la (IA) Deshabilitada',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    _isSendingDataEnabled ? '(IA) Habilitada' : '(IA) Deshabilitada',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                   Switch(
                     value: _isSendingDataEnabled, // El valor actual del switch
@@ -461,7 +486,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
               ),
               const Text(
                 "Recomendaciones de la IA",
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
               // --- USANDO MarkdownBody PARA MOSTRAR LA RESPUESTA ---
               Expanded(
