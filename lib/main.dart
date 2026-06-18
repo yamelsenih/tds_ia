@@ -64,7 +64,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
   Color? _currentColor;
 
   final String microbitName = 'BBC micro:bit'; // Nombre por defecto del Micro:bit
-  final String apiUrl = 'https://n8n.dev.solopcloud.com/webhook/12c1e593-7bad-4d4f-9ce7-fbf64b6ffb85';
+  final String apiUrl = 'https://n8n.coord.solopcloud.com/webhook/12c1e593-7bad-4d4f-9ce7-fbf64b6ffb85';
 
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
