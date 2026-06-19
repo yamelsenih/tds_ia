@@ -392,14 +392,8 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
 
   void _changeColor(double measure) {
     setState(() {
-      if(measure > 1 && measure <= 120) {
+      if(measure > 1 && measure <= 240) {
         _currentColor = Colors.green;
-      } else if(measure > 120 && measure <= 250) {
-        _currentColor = Colors.yellow;
-      } else if(measure > 250 && measure <= 350) {
-        _currentColor = Colors.orange;
-      } else if(measure > 350) {
-        _currentColor = Colors.red;
       } else {
         _currentColor = _getDefaultColor();
       }
