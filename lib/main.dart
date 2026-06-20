@@ -395,7 +395,7 @@ class _BluetoothAccelerometerScreenState extends State<BluetoothAccelerometerScr
       if(measure > 1 && measure <= 240) {
         _currentColor = Colors.green;
       } else {
-        _currentColor = _getDefaultColor();
+        _currentColor = Colors.red;
       }
     });
   }
